@@ -11,14 +11,22 @@ h2 {
 
 .b1, .b2, .b3, .b4{
     display:inline-block;
+    margin: 2%;
+    float: left;
+    width: 23%;
+    height: 400px;
+    background-color: yellow;
+    }
+
+div {
+    display: inline-block;
+    margin: 2%;
     position: relative;
     float:left;
     width: calc(25% - 10px);
     height:400px;
-    background-color: lightgrey;
-}
-
-a {
+    background-color: green;
+    }
+model {
   flex: 1;
 }
-
