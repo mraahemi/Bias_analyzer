@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block body %}
+<h2>Welcome to BiasAnalyzer</h2>
+
+{% for model in models %}
+<div class=a>
+    <a href="/models/{{model.id}}">Model {{model.id}}</a>
+</div>
+{% endfor %}
+{% endblock %}
