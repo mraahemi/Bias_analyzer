@@ -1,0 +1,24 @@
+body {
+    margin: 0;
+    font-family: sans-serif;
+}
+h2 {
+    border: 2px #eee solid;
+    color: brown;
+    text-align: center;
+    padding: 10px;
+}
+
+.b1, .b2, .b3, .b4{
+    display:inline-block;
+    position: relative;
+    float:left;
+    width: calc(25% - 10px);
+    height:400px;
+    background-color: lightgrey;
+}
+
+a {
+  flex: 1;
+}
+
