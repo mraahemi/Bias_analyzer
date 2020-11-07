@@ -4,9 +4,9 @@ from sklearn.datasets import fetch_openml
 import datetime
 import pandas as pd
 
-connection = sqlite3.connect('model_information.db')
+connection = sqlite3.connect('database/model_information.db')
 
-FOLDER = 'ddl'
+FOLDER = 'database/ddl'
 
 for file in os.listdir(FOLDER):
     if file.endswith('sql'):
