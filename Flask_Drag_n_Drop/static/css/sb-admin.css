@@ -65,6 +65,15 @@ html {
     z-index: 1;
   }
   
+  b1 {
+    display: inline-block;
+    margin: 2%;
+    position: relative;
+    float:left;
+    width: calc(25% - 10px);
+    height:400px;
+    background-color: green;
+    }
   #mainNav .navbar-collapse {
     overflow: auto;
     max-height: 75vh;

@@ -43,7 +43,13 @@
           <p>Simplify Your Machine Learning and Data Exploration(Semi-Automated ML)</p>
           <p><a href="{{ url_for('index')}}" type="button" class="btn btn-primary" > Refresh</a></p>
         </div>
-      
+
+
+         {% for model in models %}
+         <div class="container">
+             <a href="/models/{{model.model_id}}">Model {{model.model_id}}</a>
+         </div>
+         {% endfor %}
 
       <div class="container">
           <div class="main">
@@ -68,12 +74,6 @@
       </div>
       </div>
       </div>
-
-    {% for model in models %}
-    <div class=a>
-        <a href="/models/{{model.id}}">Model {{model.id}}</a>
-    </div>
-{% endfor %}
 
 {% endblock %}
 

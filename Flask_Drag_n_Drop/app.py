@@ -1,7 +1,7 @@
 # Flask Packages
 from flask import Flask,render_template,request,url_for
 from flask_bootstrap import Bootstrap 
-from flask_uploads import UploadSet,configure_uploads,IMAGES,DATA,ALL
+from flask_uploads import UploadSet, configure_uploads, IMAGES, DATA, ALL
 from flask_sqlalchemy import SQLAlchemy 
 
 from werkzeug.utils import secure_filename
@@ -33,7 +33,7 @@ Bootstrap(app)
 db = SQLAlchemy(app)
 
 # Configuration for File Uploads
-files = UploadSet('files',ALL)
+files = UploadSet('files', ALL)
 app.config['UPLOADED_FILES_DEST'] = 'database'
 configure_uploads(app,files)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database/model_information.db'
@@ -53,13 +53,31 @@ class FctModelData(db.Model):
     is_uploaded_by_user = db.Column(db.Integer)
     model_description = db.Column(db.String(2000))
 
+class DimModels(db.Model):
+    model_id = db.Column(db.Integer, primary_key=True)
+    model_name = db.Column(db.String(50))
+    create_time = db.Column(db.DateTime)
+    is_uploaded_by_user = db.Column(db.Integer)
+    model_description = db.Column(db.String(2000))
+
 @app.route('/')
 def index():
-    return render_template('index.html')
+    print('THIS IS DIM MODELS')
+    models = DimModels.query.all()
+    print([model.model_id for model in models])
+    return render_template('index.html', models=models)
 
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
+
+@app.route('/models/<int:id>')
+def show_model(id):
+    model_data = DimModels.query.filter_by(model_id=id).all()
+    df = pd.DataFrame(model_data)
+    print(df)
+    # todo: make this function render the model overview
+    return render_template('model_overview.html', model_overview=id)
 
 # Route for our Processing and Details Page
 @app.route('/dataupload',methods=['GET','POST'])
@@ -116,7 +134,7 @@ def dataupload():
             model_results = results
             model_names = names
 
-        # Saving Results of Uploaded Files  to Sqlite DB
+        # Saving Results of Uploaded Files to Sqlite DB
         newfile = FileContents(name=file.filename,data=file.read(),modeldata=msg)
         db.session.add(newfile)
         db.session.commit()
@@ -133,7 +151,7 @@ def dataupload():
         )
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, use_debugger=False, use_reloader=True)
 
 
 
