@@ -1,0 +1,10 @@
+DROP TABLE IF EXISTS dim_models;
+
+CREATE TABLE dim_models (
+    model_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    model_name VARCHAR2(50),
+    created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    uploaded_flag INTEGER
+);
+
+

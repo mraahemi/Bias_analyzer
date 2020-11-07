@@ -68,7 +68,12 @@
       </div>
       </div>
       </div>
- 
+
+    {% for model in models %}
+    <div class=a>
+        <a href="/models/{{model.id}}">Model {{model.id}}</a>
+    </div>
+{% endfor %}
 
 {% endblock %}
 
