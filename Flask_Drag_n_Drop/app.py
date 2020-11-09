@@ -1,8 +1,14 @@
 # Flask Packages
 from flask import Flask,render_template,request,url_for
+from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
+from matplotlib.figure import Figure
 from flask_bootstrap import Bootstrap 
 from flask_uploads import UploadSet, configure_uploads, IMAGES, DATA, ALL
-from flask_sqlalchemy import SQLAlchemy 
+from flask_sqlalchemy import SQLAlchemy
+import io
+import base64
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 from werkzeug.utils import secure_filename
 import os
@@ -28,7 +34,10 @@ from sklearn.svm import SVC
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-app = Flask(__name__)
+# import own code
+from utils.plot_utils import create_historgram
+
+app = Flask(__name__, static_url_path='/static')
 Bootstrap(app)
 db = SQLAlchemy(app)
 
@@ -45,13 +54,13 @@ class FileContents(db.Model):
     modeldata = db.Column(db.String(300))
     data = db.Column(db.LargeBinary)
 
-# todo: use this class
-class FctModelData(db.Model):
-    model_id = db.Column(db.Integer, primary_key=True)
-    model_name = db.Column(db.String(300))
-    create_time = db.Column(db.DateTime)
-    is_uploaded_by_user = db.Column(db.Integer)
-    model_description = db.Column(db.String(2000))
+# class FctModelData(db.Model):
+#     model_id = db.Column(db.Integer)
+#     column_name = db.Column(db.String(300))
+#     column_value = db.Column(db.Float)
+#     is_target_variable = db.Column(db.Integer)
+#     is_donated = db.Column(db.Integer)
+#     index_column = db.Column(db.Integer)
 
 class DimModels(db.Model):
     model_id = db.Column(db.Integer, primary_key=True)
@@ -62,22 +71,41 @@ class DimModels(db.Model):
 
 @app.route('/')
 def index():
-    print('THIS IS DIM MODELS')
     models = DimModels.query.all()
-    print([model.model_id for model in models])
     return render_template('index.html', models=models)
 
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
 
+def create_age_hist_plot(df):
+    hist = np.histogram(df['age'], 100)
+
+    df_hist = pd.DataFrame(hist, index=['counts', 'age']).T
+    df_hist = df_hist[df_hist['counts'] != 0]
+
+    ax = sns.relplot(
+        data=df_hist, kind="line",
+        x="age", y="counts"
+    )
+    max_val = 1.03 * df_hist['counts'].max()
+    # todo: this must be inserted data, don't use "25" here
+    ax = plt.vlines(25, df_hist['counts'].min(), max_val, colors='red')
+    url = "/static/new_plot.png"
+    plt.savefig(f'templates/{url}')
+    return url
+
+
 @app.route('/models/<int:id>')
 def show_model(id):
-    model_data = DimModels.query.filter_by(model_id=id).all()
-    df = pd.DataFrame(model_data)
-    print(df)
-    # todo: make this function render the model overview
-    return render_template('model_overview.html', model_overview=id)
+    model_metadata = DimModels.query.filter_by(model_id=id).all()
+
+    model_information=pd.read_sql_query(f'select * from dim_models where model_id = {id}', con=db.engine)
+    target_table = model_information['data_table'].values[0]
+    df = pd.read_sql_query(f'select * from {target_table}', con=db.engine)
+    age_hist = create_age_hist_plot(df)
+
+    return render_template('model_overview.html', model_overview=model_metadata, age_hist=age_hist)
 
 # Route for our Processing and Details Page
 @app.route('/dataupload',methods=['GET','POST'])

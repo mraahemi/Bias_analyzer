@@ -7,7 +7,13 @@
 {% block body %}
 <h2>Model Overview</h2>
 
+{% for model in model_overview %}
 <div class=a>
-    Model Id: {{model.id}} <br>
+    Model Id: {{model.model_id}} <br>
+    Model Description: {{model.model_description}}
 </div>
+{% endfor %}
+<img src={{ age_hist }} alt="Chart" height="500" width="500">
+
+
 {% endblock %}
