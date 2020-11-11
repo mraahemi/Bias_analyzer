@@ -35,7 +35,7 @@ from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 # import own code
-from utils.plot_utils import create_historgram
+from project_utils.plot_utils import create_histogram
 
 app = Flask(__name__, static_url_path='/static')
 Bootstrap(app)
