@@ -19,7 +19,7 @@
 			<title>{% block title %} Title!{% endblock %}</title>
 		{% endblock %}
 	</head>
-	<div id="demo">test</div>
+	<div id="demo">{{first_name}}</div>
 
 	<body>
 		<div id={{ chartID|safe }} class="chart" style="height: 1600px; width: 1000px"></div>
@@ -33,16 +33,6 @@
 			<script src="http://code.highcharts.com/highcharts.js"></script>
 			<script src="../static/js/shap_explainer.js"></script>
 	</body>
-
-	{% for model in model_overview %}
-		<form action="{{ url_for('show_model_own_data', id=model.model_id )}}" method="post">
-			{% for column in data_cols %}
-			    <label for="{{column}}">{{column}}</label><br>
-				<input type="text" id={{column}} name={{column}}><br>
-			{% endfor %}
-		<input type="submit">
-	</form>
-	{% endfor %}
 
 
 </html>

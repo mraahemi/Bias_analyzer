@@ -9,11 +9,13 @@ import io
 import base64
 import seaborn as sns
 import matplotlib.pyplot as plt
+import pathlib
 
 from werkzeug.utils import secure_filename
 import os
 import datetime
 import time
+import pickle
 
 
 # EDA Packages
@@ -21,6 +23,7 @@ import pandas as pd
 import numpy as np 
 
 # ML Packages
+import sklearn
 from sklearn import model_selection
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
@@ -28,6 +31,8 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.naive_bayes import GaussianNB
 from sklearn.svm import SVC
+from sklearn.datasets import fetch_openml
+from sklearn.model_selection import train_test_split
 
 
 # ML Packages For Vectorization of Text For Feature Extraction
@@ -46,6 +51,8 @@ files = UploadSet('files', ALL)
 app.config['UPLOADED_FILES_DEST'] = 'database'
 configure_uploads(app,files)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database/model_information.db'
+
+MODEL_PATH = pathlib.Path('models')
 
 # Saving Data To Database Storage
 class FileContents(db.Model):
@@ -95,17 +102,63 @@ def create_age_hist_plot(df):
     plt.savefig(f'templates/{url}')
     return url
 
+def load_pickle_obj_by_id(id, type):
+    filelist = os.listdir(MODEL_PATH)
+    if type == 'model':
+        obj_list = [el for el in filelist if el.startswith(f'model{id}') and not el.endswith('explainer.pkl')]
+    elif type == 'explainer':
+        obj_list = [el for el in filelist if el.startswith(f'model{id}_explainer.pkl')]
+    else:
+        raise ValueError(f"Type {type} not specified. Choose one of 'model' or 'explainer'.")
+    assert len(obj_list) == 1
+    with open(MODEL_PATH / obj_list[0], 'rb') as f:
+        obj = pickle.load(f)
+    return obj
 
-@app.route('/models/<int:id>')
-def show_model(id):
+def load_model_by_id(id):
+    model = load_pickle_obj_by_id(id, 'model')
+    return model
+
+def load_shap_explainer_by_id(id):
+    explainer = load_pickle_obj_by_id(id, 'explainer')
+    return explainer
+
+def load_data_for_model_overview(id):
     model_metadata = DimModels.query.filter_by(model_id=id).all()
 
     model_information=pd.read_sql_query(f'select * from dim_models where model_id = {id}', con=db.engine)
     target_table = model_information['data_table'].values[0]
+    target_variable = model_information['target_variable'].values[0]
     df = pd.read_sql_query(f'select * from {target_table}', con=db.engine)
+    df = df.drop(target_variable, axis=1)
     age_hist = create_age_hist_plot(df)
 
-    return render_template('model_overview.html', model_overview=model_metadata, age_hist=age_hist)
+    data_cols = list(set([col.split('_')[0] for col in df.columns]))
+
+    explainer = load_shap_explainer_by_id(id)
+    # todo: display shap values of the complete dataset. Due to performance reasons this should be precalculated
+    #  and saved in a table, here we should only load the data.
+    shap_values = list(np.ravel(explainer.shap_values(df.iloc[[20], :])))
+    column_names = list(np.ravel(df.columns))
+    column_names = [x for _,x in sorted(zip(shap_values,column_names))]
+    shap_values = sorted(shap_values)
+    return model_metadata, age_hist, shap_values, column_names, data_cols
+
+@app.route('/models/<int:id>', methods=['GET', 'POST'])
+def show_model(id):
+    model_metadata, age_hist, shap_values, feature_cols, data_cols = load_data_for_model_overview(id)
+    return render_template('model_overview.html', model_overview=model_metadata, age_hist=age_hist,
+                           shap_values=shap_values, feature_cols=feature_cols,
+                           chartID='test_id', data_cols=data_cols)
+
+@app.route('/models_adjusted/<int:id>', methods=['GET', 'POST'])
+def show_model_own_data(id):
+    model_metadata, age_hist, shap_values, feature_cols, data_cols = load_data_for_model_overview(id)
+    for col in data_cols:
+        first_name = request.form['age']
+    return render_template('model_overview_adjusted.html', model_overview=model_metadata, age_hist=age_hist,
+                           shap_values=shap_values, feature_cols=feature_cols,
+                           chartID='test_id', first_name=first_name, data_cols=data_cols)
 
 # Route for our Processing and Details Page
 @app.route('/dataupload',methods=['GET','POST'])
