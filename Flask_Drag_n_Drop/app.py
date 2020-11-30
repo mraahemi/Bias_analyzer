@@ -147,8 +147,11 @@ def load_data_for_model_overview(id):
 @app.route('/models/<int:id>', methods=['GET', 'POST'])
 def show_model(id):
     model_metadata, age_hist, shap_values, feature_cols, data_cols = load_data_for_model_overview(id)
+    threshold = 0.01
+    json_cols_data = {col_name: shap_value for col_name, shap_value in zip(feature_cols, shap_values) if
+                      abs(shap_value) > threshold}
     return render_template('model_overview.html', model_overview=model_metadata, age_hist=age_hist,
-                           shap_values=shap_values, feature_cols=feature_cols,
+                           shap_values=shap_values, feature_cols=feature_cols, json_cols_data=json_cols_data,
                            chartID='test_id', data_cols=data_cols)
 
 @app.route('/models_adjusted/<int:id>', methods=['GET', 'POST'])
