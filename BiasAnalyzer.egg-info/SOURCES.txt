@@ -1,0 +1,7 @@
+README.md
+setup.py
+BiasAnalyzer.egg-info/PKG-INFO
+BiasAnalyzer.egg-info/SOURCES.txt
+BiasAnalyzer.egg-info/dependency_links.txt
+BiasAnalyzer.egg-info/requires.txt
+BiasAnalyzer.egg-info/top_level.txt

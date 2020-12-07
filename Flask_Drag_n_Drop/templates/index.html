@@ -37,39 +37,37 @@
 {% endblock %}
 
 <!-- Main jumbotron for a primary marketing message or call to action -->
-     <div class="container">
-      <div class="jumbotron">
-         <h1 class="display-3">Simplified MLApp</h1>
+     <div class="container-fluid">
+      <div class="card bg-primary" style="height: 120px">
+         <h1 class="display-3">Simplified ML-App</h1>
           <p>Simplify Your Machine Learning and Data Exploration(Semi-Automated ML)</p>
-          <p><a href="{{ url_for('index')}}" type="button" class="btn btn-primary" > Refresh</a></p>
-        </div>
+          <p><a href="{{ url_for('index')}}" type="button" class="btn btn-success"> Refresh</a></p>
+      </div>
 
 
          {% for model in models %}
-         <div class="container">
-             <a href="/models/{{model.model_id}}">Model {{model.model_id}}</a>
+         <div class="container-fluid">
+             <a href="/models/{{model.model_id}}" type="button" class="btn btn-success m-2">Model {{model.model_id}}</a>
          </div>
          {% endfor %}
 
-      <div class="container">
-          <div class="main">
+
+          <div class="card bg-primary">
               <div class="row">
-                <div class="col-md-8" style="background-color:#1dcaff">
+                <div class="col-md-12">
                   <h2 style="color:#fff">Upload Your Dataset</h2>
                     <p style="color:#fff">We only accept csv format numerical data</p>
                       <form method=POST enctype=multipart/form-data action="{{ url_for('dataupload') }}" class="form-group">
                         <div class="form-group">
                           <input type="file" name="csv_data">
                         <br/>
-                        </div>
-      
-                        
-                        <input type="submit"  onclick="myAnalyser()" class="btn btn-primary mb-2"> 
+                        </div>                        
+                        <input type="submit"  onclick="myAnalyser()" class="btn btn-warning mb-2"> 
                         <input type="reset"  value="Reset" class="btn btn-danger mb-2">
                       </form>
                       <br/>
                 </div>      
-              </div>
+
         
       </div>
       </div>

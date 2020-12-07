@@ -81,6 +81,12 @@ def index():
     models = DimModels.query.all()
     return render_template('index.html', models=models)
 
+
+@app.route('/file-upload')
+def fileupload():
+    # models = DimModels.query.all()
+    return render_template('file_upload.html')
+
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
