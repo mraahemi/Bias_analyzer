@@ -15,9 +15,12 @@ engine = create_engine('sqlite:///database/model_information.db')
 
 model_mapping = {'model 1': 1, 'model 2': 2}
 
-@st.cache
 def load_data_table(model_id, engine):
     return load_fct_table_by_id(model_id, engine)
+# todo: this is not generic but caching does not work with reading from and sqlite db. Therefore I hope that it
+#  improves performance if we have it up here
+df_data = load_data_table(1, engine)
+describe = df_data.describe()
 
 option = st.sidebar.selectbox(
     'What do you want to check out?',
@@ -32,15 +35,13 @@ else:
     st.title('Income Model')
     st.write('This is a model predicting the income based on features.')
     model_id = model_mapping[option]
-    # todo: cache this
-    df_data = load_fct_table_by_id(model_id, engine)
 
     num_feat = st.sidebar.slider('#most important features', 0, 105, 20)
     column_names = load_column_names_by_id(model_id, engine)
     # todo: make this generic. We need to drop the target_feature form the meta-information. Write
     #  an extra method to get this meta information.
     column_names = column_names.drop('over_50k', axis=1).columns
-    col_options, continouos_cols = column_names_to_options_dict(column_names)
+    col_options, continuous_cols = column_names_to_options_dict(column_names)
 
 
     def inverse_get_dummies_single_row(df, dummy_cols):
@@ -57,12 +58,11 @@ else:
         user_features = {}
         randint = np.random.randint(0, len(df_data))
         rand_data = df_data.iloc[[randint], :]
-        rand_data.to_csv('rand_data.csv', index=False)
         # the following two lines reverse the pd.get_dummies operation
         dummy_cols = [col for col in df_data.columns if '_' in col and col != 'over_50k']
         user_features = inverse_get_dummies_single_row(rand_data.drop('over_50k', axis=1),
                                                        dummy_cols).iloc[0, :].to_dict()
-        user_features.update(rand_data[continouos_cols].iloc[0, :].to_dict())
+        user_features.update(rand_data[continuous_cols].iloc[0, :].to_dict())
     for feature, option_list in col_options.items():
         feat_from_dict = user_features.get(feature)
         #if feature in user_features and feature in :
@@ -76,12 +76,9 @@ else:
     #  includes df.describe() like data and read like the mean or median as default value
     user_feat_df = pd.get_dummies(pd.DataFrame([user_features]))
 
-    user_feat_df['age'] = st.sidebar.slider('age', 10, 99, int(user_features.get('age', 25)))
-    user_feat_df['fnlwgt'] = st.sidebar.slider('fnlwgt', 10000, 1490400, int(user_features.get('fnlwgt', 50000)))
-    user_feat_df['education-num'] = st.sidebar.slider('education-num', 1, 16, int(user_features.get('education-num', 13)))
-    user_feat_df['capital-gain'] = st.sidebar.slider('capital-gain', 0, 99999, int(user_features.get('capital-gain', 50000)))
-    user_feat_df['capital-loss'] = st.sidebar.slider('capital-loss', 0, 4356, int(user_features.get('capital-loss', 2000)))
-    user_feat_df['hours-per-week'] = st.sidebar.slider('hours-per-week', 1, 99, int(user_features.get('hours-per-week', 38)))
+    for col in continuous_cols:
+        user_feat_df[col] = st.sidebar.slider(col, int(describe.loc['min', col]), int(describe.loc['max', col]),
+                                              int(user_features.get(col, int(describe.loc['50%', col]))))
 
     for col in column_names:
         if col not in user_feat_df.columns:
@@ -91,18 +88,35 @@ else:
 
 #    model_metadata, shap_values, column_names, data_cols = load_data_for_model_overview(model_mapping['model 1'],
 #                                                                                        engine)
-    df = pd.DataFrame(np.array([shap_values, column_names]).T, columns=['shap_value', 'attribute'])
+    user_feat_df_norm = 100*(user_feat_df / describe[user_feat_df.columns].loc['max', :])
+    shap_values_norm = 100*(shap_values / np.max(shap_values))
+    df = pd.DataFrame(np.array([shap_values_norm,
+                                shap_values,
+                                user_feat_df_norm[column_names].values[0],
+                                user_feat_df[column_names].values[0]]).T, columns=['shap_value_norm',
+                                                                                   'shap_value',
+                                                                                   'feature_value_norm',
+                                                                                   'feature_value'],
+                      index=column_names)
 
-    df['shap_value'] = df['shap_value'].astype(float)
-    df['abs_value'] = np.abs(df['shap_value'])
+    convert_cols = ['shap_value_norm', 'shap_value', 'feature_value_norm', 'feature_value']
+    df[convert_cols] = df[convert_cols].astype(float)
+    df['abs_value'] = np.abs(df['shap_value_norm'])
     # filter df
     df = df.sort_values('abs_value', ascending=False).iloc[:num_feat, :]
+    df_stacked = df[['shap_value_norm', 'feature_value_norm']].stack().reset_index().rename(columns={'level_1': 'value_type', 0:'value',
+                                                   'level_0': 'attribute'})
+    df = pd.merge(df_stacked, df[['shap_value', 'feature_value']], left_on='attribute', right_on=df.index)
+
     bars = alt.Chart(df).mark_bar().encode(
-        y=alt.Y('attribute', sort='-x'),
-        color='attribute',
-        x='shap_value',
-        tooltip=['attribute', 'shap_value']
+        # y=alt.Y('attribute:O', sort='-x'),
+        y=alt.Y('value_type:O', axis=alt.Axis(title=None, labels=False, ticks=False)),
+        color='value_type:N',
+        x='value:Q',
+        row=alt.Row('attribute:N', header=alt.Header(labelAngle=0, labelAlign="left")),
+        tooltip=['attribute', 'shap_value', 'feature_value']
     ).interactive()
+
 
     percentage = calculate_percentage(model_id, user_feat_df)
     per = str(round(percentage, 2))
