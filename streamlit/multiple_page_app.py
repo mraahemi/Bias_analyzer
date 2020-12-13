@@ -15,6 +15,9 @@ engine = create_engine('sqlite:///database/model_information.db')
 
 model_mapping = {'model 1': 1, 'model 2': 2}
 
+@st.cache
+def load_data_table(model_id, engine):
+    return load_fct_table_by_id(model_id, engine)
 
 option = st.sidebar.selectbox(
     'What do you want to check out?',
@@ -29,6 +32,7 @@ else:
     st.title('Income Model')
     st.write('This is a model predicting the income based on features.')
     model_id = model_mapping[option]
+    # todo: cache this
     df_data = load_fct_table_by_id(model_id, engine)
 
     num_feat = st.sidebar.slider('#most important features', 0, 105, 20)
@@ -38,31 +42,46 @@ else:
     column_names = column_names.drop('over_50k', axis=1).columns
     col_options, continouos_cols = column_names_to_options_dict(column_names)
 
+
+    def inverse_get_dummies_single_row(df, dummy_cols):
+        s = df[dummy_cols]
+        s = s[s != 0].dropna(axis=1)
+        l = s.stack().to_frame().reset_index()
+        t = l.assign(value=[col.split('_')[1] for col in l['level_1'].values],
+                     col_name=[col.split('_')[0] for col in l['level_1'].values],
+                     row_number=l['level_0'].values).drop(0, axis=1)
+        return pd.pivot_table(t, columns='col_name', values='value', index='row_number', aggfunc='first')
+
     user_features = {}
     if st.sidebar.button("Show random Person from Dataset"):
+        user_features = {}
         randint = np.random.randint(0, len(df_data))
-        srs_data = df_data.iloc[randint, :]
-        user_features = srs_data.to_dict()
-        user_feat_df = pd.get_dummies(pd.DataFrame([user_features]))
-    else:
-        for feature, option_list in col_options.items():
-            user_features[feature] = st.sidebar.selectbox(
-                f'What is your {feature}?', option_list)
-        # todo: would be better if this is read dynamically. So we need another metadata table for each model which
-        #  includes df.describe() like data and read like the mean or median as default value
-        user_feat_df = pd.get_dummies(pd.DataFrame([user_features]))
-    #    df_describe = df_data.describe()
-    #    for col in continouos_cols:
-    #        default_value = float(df_describe.loc['50%', col])
-    #        max_val = float(df_describe.loc['max', col])
-    #        min_val = float(df_describe.loc['min', col])
-    #        user_feat_df[col] = st.sidebar.slider(col, min_val, max_val, default_value)
-        user_feat_df['age'] = st.sidebar.slider('age', 10, 99, 25)
-        user_feat_df['fnlwgt'] = st.sidebar.slider('fnlwgt', 10000, 1490400, 100000)
-        user_feat_df['education-num'] = st.sidebar.slider('education-num', 1, 16, 9)
-        user_feat_df['capital-gain'] = st.sidebar.slider('capital-gain', 0, 99999, 50000)
-        user_feat_df['capital-loss'] = st.sidebar.slider('capital-loss', 0, 4356, 2000)
-        user_feat_df['hours-per-week'] = st.sidebar.slider('hours-per-week', 1, 99, 38)
+        rand_data = df_data.iloc[[randint], :]
+        rand_data.to_csv('rand_data.csv', index=False)
+        # the following two lines reverse the pd.get_dummies operation
+        dummy_cols = [col for col in df_data.columns if '_' in col and col != 'over_50k']
+        user_features = inverse_get_dummies_single_row(rand_data.drop('over_50k', axis=1),
+                                                       dummy_cols).iloc[0, :].to_dict()
+        user_features.update(rand_data[continouos_cols].iloc[0, :].to_dict())
+    for feature, option_list in col_options.items():
+        feat_from_dict = user_features.get(feature)
+        #if feature in user_features and feature in :
+        if feature in user_features:
+             default_ind = option_list.index(feat_from_dict)
+        else:
+            default_ind = 0
+        user_features[feature] = st.sidebar.selectbox(
+            f'What is your {feature}?', option_list, index=default_ind)
+    # todo: would be better if this is read dynamically. So we need another metadata table for each model which
+    #  includes df.describe() like data and read like the mean or median as default value
+    user_feat_df = pd.get_dummies(pd.DataFrame([user_features]))
+
+    user_feat_df['age'] = st.sidebar.slider('age', 10, 99, int(user_features.get('age', 25)))
+    user_feat_df['fnlwgt'] = st.sidebar.slider('fnlwgt', 10000, 1490400, int(user_features.get('fnlwgt', 50000)))
+    user_feat_df['education-num'] = st.sidebar.slider('education-num', 1, 16, int(user_features.get('education-num', 13)))
+    user_feat_df['capital-gain'] = st.sidebar.slider('capital-gain', 0, 99999, int(user_features.get('capital-gain', 50000)))
+    user_feat_df['capital-loss'] = st.sidebar.slider('capital-loss', 0, 4356, int(user_features.get('capital-loss', 2000)))
+    user_feat_df['hours-per-week'] = st.sidebar.slider('hours-per-week', 1, 99, int(user_features.get('hours-per-week', 38)))
 
     for col in column_names:
         if col not in user_feat_df.columns:
