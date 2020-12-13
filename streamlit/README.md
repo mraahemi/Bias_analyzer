@@ -17,6 +17,7 @@ pip install -r requirements.txt
 This will download all dependencies needed to run the project. 
 Then do the following.
 ```python
+./create_and_initialize_db.sh
 streamlit run multiple_page_agg.py
 ```
 This will open another tab in your default browser and show you the app.
