@@ -88,3 +88,4 @@ def column_names_to_options_dict(column_names):
         else:
             continouos_cols.append(el)
     return result_dct, continouos_cols
+

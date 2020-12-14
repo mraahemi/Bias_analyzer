@@ -35,4 +35,6 @@ df = pd.concat([pd.get_dummies(adult.data), pd.get_dummies(adult.target)], axis=
 df = df.drop('<=50K', axis=1)
 df.to_sql('fct_income_model', con=connection, if_exists='append', index=False)
 
+df.describe().to_sql('fct_income_model_describe', con=connection, if_exists='append')
+
 connection.close()

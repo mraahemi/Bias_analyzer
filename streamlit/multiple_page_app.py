@@ -15,12 +15,8 @@ engine = create_engine('sqlite:///database/model_information.db')
 
 model_mapping = {'model 1': 1, 'model 2': 2}
 
-def load_data_table(model_id, engine):
-    return load_fct_table_by_id(model_id, engine)
-# todo: this is not generic but caching does not work with reading from and sqlite db. Therefore I hope that it
-#  improves performance if we have it up here
-df_data = load_data_table(1, engine)
-describe = df_data.describe()
+describe = pd.read_sql_table('fct_income_model_describe', con=engine)
+describe = describe.set_index(describe['index'])
 
 option = st.sidebar.selectbox(
     'What do you want to check out?',
@@ -56,10 +52,10 @@ else:
     user_features = {}
     if st.sidebar.button("Show random Person from Dataset"):
         user_features = {}
-        randint = np.random.randint(0, len(df_data))
-        rand_data = df_data.iloc[[randint], :]
+        randint = np.random.randint(0, 40000)
+        rand_data = pd.read_sql_query(f'select * from fct_income_model where rowid = {randint}', con=engine)
         # the following two lines reverse the pd.get_dummies operation
-        dummy_cols = [col for col in df_data.columns if '_' in col and col != 'over_50k']
+        dummy_cols = [col for col in describe.columns if '_' in col and col != 'over_50k']
         user_features = inverse_get_dummies_single_row(rand_data.drop('over_50k', axis=1),
                                                        dummy_cols).iloc[0, :].to_dict()
         user_features.update(rand_data[continuous_cols].iloc[0, :].to_dict())
