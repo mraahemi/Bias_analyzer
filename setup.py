@@ -33,6 +33,9 @@ setuptools.setup(
         'entrypoints==0.3',
         'fairlearn==0.4.6',
         'Flask==1.1.2',
+        'Flask-Bootstrap==3.3.7.1',
+        'Flask-SQLAlchemy==2.4.4',
+        'Flask-Uploads==0.2.1',
         'future==0.18.2',
         'hypothesis==5.37.4',
         'ipykernel==5.3.4',
@@ -84,6 +87,7 @@ setuptools.setup(
         'QtPy==1.9.0',
         'scikit-learn==0.23.2',
         'scipy==1.5.3',
+        'seaborn==0.11.0',
         'Send2Trash==1.5.0',
         'six==1.15.0',
         'sortedcontainers==2.2.2',
@@ -98,3 +102,4 @@ setuptools.setup(
         'Werkzeug==1.0.1',
     ],
 )
+

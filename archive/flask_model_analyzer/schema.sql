@@ -7,3 +7,4 @@ CREATE TABLE models (
     content TEXT NOT NULL
 );
 
+select * from

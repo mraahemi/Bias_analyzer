@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta name="description" content="">
+		<meta name="keywords" content="">
+		<meta name="author" content="">
+		<meta charset="utf-8">
+
+		<!-- <link href="../static/css/main.css" rel="stylesheet" type="text/css" /> -->
+
+		<!-- SUPPORT FOR IE6-8 OF HTML5 ELEMENTS -->
+		<!--[if lt IE 9]>
+					<script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+			<![endif]-->
+
+		<!-- <link rel="shortcut icon" href="{{ url_for('static', filename='ico/favicon.ico') }}"> -->
+		{% block head %}
+			<title>{% block title %} Title!{% endblock %}</title>
+		{% endblock %}
+	</head>
+	<div id="demo">test</div>
+
+	<body>
+		<div id={{ chartID|safe }} class="chart" style="height: 1600px; width: 1000px"></div>
+
+		<script>
+			var chart_id = {{ chartID|safe }}
+			var shap_values = {{ shap_values|safe }}
+			var feature_cols = {{ feature_cols|safe }}
+			var json_cols_data = {{ json_cols_data|safe }}
+		</script>
+			<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+			<script src="http://code.highcharts.com/highcharts.js"></script>
+			<script src="../static/js/shap_explainer.js"></script>
+	</body>
+
+	{% for model in model_overview %}
+		<form action="{{ url_for('show_model_own_data', id=model.model_id )}}" method="post">
+			{% for column in data_cols %}
+			// TODO: this shall just be an example of how to use json_cols_data in javascript
+			    <label for="{{column}}">{{json_cols_data|safe }}</label><br>
+				<input type="text" id={{column}} name={{column}}><br>
+			{% endfor %}
+		<input type="submit">
+	</form>
+	{% endfor %}
+
+
+</html>
